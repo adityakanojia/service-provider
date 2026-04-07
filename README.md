@@ -1,50 +1,89 @@
-# Welcome to your Expo app 👋
+# Service Booker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Service Booker is an Expo React Native appointment-booking app for Android-focused demos. It lets users register or sign in, browse mock service providers, view provider details, reserve available time slots, review upcoming appointments, and cancel bookings.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Clerk-ready authentication with `@clerk/clerk-expo`
+- Automatic fallback to local demo authentication when `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is not configured
+- Mock service-provider catalog with profile image, category, pricing, bio, and highlights
+- Provider detail screen with generated 5-day availability and live slot locking
+- Appointment list with persistent local storage and cancellation support
+- Expo Router tab navigation optimized for a simple Android test flow
+
+## Tech Stack
+
+- Expo SDK 54
+- React Native
+- Expo Router
+- Clerk Expo
+- AsyncStorage for persisted mock users and appointments
+- Expo Secure Store for Clerk token caching
+- EAS Build configuration for generating an Android APK
+
+## Setup
+
+1. Install dependencies:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Optional: enable Clerk mode by creating a `.env` file with:
 
    ```bash
-   npx expo start
+   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
    ```
 
-In the output, you'll find options to open the app in a
+3. Start the Expo app:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npm run start
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+4. Run on Android:
 
-## Get a fresh project
+   ```bash
+   npm run android
+   ```
 
-When you're ready, run:
+## Demo Credentials
 
-```bash
-npm run reset-project
-```
+When Clerk is not configured, the app runs in local demo mode with this seeded account:
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- Email: `demo@servicebooker.app`
+- Password: `password123`
 
-## Learn more
+You can also create additional demo accounts from the sign-up screen. Those accounts and appointments are stored locally on the device.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Project Structure
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `app/auth/*`: sign-in and sign-up screens
+- `app/(tabs)/*`: providers list and appointments list
+- `app/provider/[id].tsx`: provider details and slot booking
+- `providers/auth-provider.tsx`: Clerk integration and demo auth fallback
+- `providers/appointments-provider.tsx`: mock providers, slot generation, booking, and persistence
+- `lib/mock-data.ts`: provider seed data
 
-## Join the community
+## Assumptions
 
-Join our community of developers creating universal apps.
+- Mock provider data is sufficient for the assignment; no backend API is required.
+- Appointment availability is generated for the next 5 days with fixed mock time slots.
+- Booked slots become unavailable for all local users on the device because appointments are stored in shared local storage.
+- Clerk sign-up behavior depends on the verification rules configured in your Clerk dashboard.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Validation
+
+- Run lint:
+
+   ```bash
+   npm run lint
+   ```
+
+- To create an Android APK for submission, use Expo Application Services:
+
+   ```bash
+   npx eas build -p android --profile preview
+   ```
+
+This workspace does not produce an APK automatically; the command above is the expected path for generating the installable build.

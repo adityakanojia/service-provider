@@ -1,98 +1,191 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Href, Link, Redirect } from 'expo-router';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { EmptyState } from '@/components/empty-state';
+import { ScreenHeader } from '@/components/screen-header';
+import { Colors, Spacing } from '@/constants/app-theme';
+import { useAppointments } from '@/providers/appointments-provider';
+import { useAppAuth } from '@/providers/auth-provider';
 
-export default function HomeScreen() {
+export default function ProvidersScreen() {
+  const { isLoaded, isSignedIn, user, signOut } = useAppAuth();
+  const { providers, appointments } = useAppointments();
+
+  if (!isLoaded) {
+    return <EmptyState title="Loading your workspace..." description="Preparing providers and appointments." />;
+  }
+
+  if (!isSignedIn) {
+    return <Redirect href={'/auth/sign-in' as Href} />;
+  }
+
+  const nextAppointment = appointments[0];
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScreenHeader
+          eyebrow="Appointment Booking"
+          title={`Welcome, ${user?.name.split(' ')[0] ?? 'Guest'}`}
+          description="Browse trusted professionals, reserve an open slot, and manage everything from one place."
+          actionLabel="Log Out"
+          onActionPress={signOut}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroLabel}>Next appointment</Text>
+          {nextAppointment ? (
+            <>
+              <Text style={styles.heroTitle}>{nextAppointment.providerName}</Text>
+              <Text style={styles.heroMeta}>
+                {nextAppointment.category} • {nextAppointment.dateLabel} at {nextAppointment.time}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.heroTitle}>No booking yet</Text>
+              <Text style={styles.heroMeta}>Choose a provider below to reserve your first time slot.</Text>
+            </>
+          )}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Featured providers</Text>
+          <Text style={styles.sectionSubtitle}>{providers.length} professionals ready to book</Text>
+        </View>
+
+        {providers.map((provider) => (
+          <Link href={`/provider/${provider.id}` as Href} key={provider.id} asChild>
+            <TouchableOpacity style={styles.card}>
+              <Image source={provider.image} style={styles.avatar} contentFit="cover" />
+              <View style={styles.cardBody}>
+                <View style={styles.cardTopRow}>
+                  <Text style={styles.cardTitle}>{provider.name}</Text>
+                  <Text style={styles.rating}>{provider.rating.toFixed(1)}</Text>
+                </View>
+                <Text style={styles.badge}>{provider.category}</Text>
+                <Text style={styles.cardText}>{provider.bio}</Text>
+                <View style={styles.cardFooter}>
+                  <Text style={styles.footerText}>{provider.location}</Text>
+                  <Text style={styles.footerText}>${provider.sessionPrice}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Link>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  content: {
+    padding: Spacing.lg,
+    gap: Spacing.lg,
+    paddingBottom: 120,
+  },
+  heroCard: {
+    backgroundColor: Colors.primary,
+    borderRadius: 28,
+    padding: Spacing.lg,
+    gap: 8,
+  },
+  heroLabel: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    opacity: 0.85,
+  },
+  heroTitle: {
+    color: Colors.white,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  heroMeta: {
+    color: Colors.white,
+    fontSize: 15,
+    lineHeight: 22,
+    opacity: 0.92,
+  },
+  sectionHeader: {
+    gap: 4,
+  },
+  sectionTitle: {
+    color: Colors.text,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  sectionSubtitle: {
+    color: Colors.subtleText,
+    fontSize: 14,
+  },
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    padding: Spacing.md,
     flexDirection: 'row',
+    gap: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  avatar: {
+    width: 84,
+    height: 84,
+    borderRadius: 20,
+    backgroundColor: Colors.cardMuted,
+  },
+  cardBody: {
+    flex: 1,
+    gap: 8,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  cardTitle: {
+    color: Colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  rating: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    color: Colors.primary,
+    backgroundColor: Colors.primarySoft,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  cardText: {
+    color: Colors.subtleText,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  footerText: {
+    color: Colors.text,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
